@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Then
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
   var window: UIWindow?
@@ -14,9 +15,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     guard let windowScene = scene as? UIWindowScene else {
       return
     }
+    UINavigationBar.appearance().prefersLargeTitles = true
+
     let newWindow = UIWindow(windowScene: windowScene)
     newWindow.makeKeyAndVisible()
-    newWindow.rootViewController = ViewController()
+    newWindow.rootViewController = UINavigationController(rootViewController: ViewController())
     window = newWindow
   }
 }
