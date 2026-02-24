@@ -1,5 +1,7 @@
 # Review Guidelines
 
+- You must write all code review feedback strictly in Korean.
+
 ## Architecture / Design
 
 - You must classify any code flow that violates the project’s adopted architectural pattern (e.g., MVC, MVVM, VIPER, Clean Architecture) as P0.
