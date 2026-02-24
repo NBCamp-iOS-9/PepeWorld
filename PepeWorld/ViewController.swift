@@ -10,6 +10,22 @@ import SnapKit
 import Kingfisher
 import Then
 
+class Person {
+  var age = 100
+
+  func ageGet() -> Int {
+    age
+  }
+
+  func addbutton(_ button: UIButton) -> Void {
+    print(button)
+  }
+
+  func GetButton() -> UIButton? {
+    return nil
+  }
+}
+
 final class ViewController: UIViewController {
   private lazy var collectionView = UICollectionView(
     frame: .zero,
@@ -18,14 +34,20 @@ final class ViewController: UIViewController {
 
   private lazy var dataSource = makeCollectionViewDataSource(collectionView)
 
+  var i: Int = 1000
+
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "Pepe World"
+
+    i = 1000
 
     view.addSubview(collectionView)
     collectionView.snp.makeConstraints {
       $0.directionalEdges.equalToSuperview()
     }
+
+    i = 2000
 
     Task {
       do {
@@ -38,6 +60,12 @@ final class ViewController: UIViewController {
         print(error)
       }
     }
+
+    let button = UIButton()
+    let action = UIAction { _ in
+      self.viewDidLoad()
+    }
+    button.addAction(action, for: .touchUpInside);
   }
 }
 
