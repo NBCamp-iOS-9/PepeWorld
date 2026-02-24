@@ -11,7 +11,7 @@ import Kingfisher
 import Then
 
 class Person {
-  var age = 100
+  var age = 200
 
   func ageGet() -> Int {
     age
