@@ -12,12 +12,6 @@ import Then
 
 final class SelfReferencingWorker {
   private var onTick: (() -> Void)?
-
-  func startLeaking() {
-    onTick = {
-      self.startLeaking()
-    }
-  }
 }
 
 final class ViewController: UIViewController {
@@ -57,25 +51,6 @@ final class ViewController: UIViewController {
     }
   }
 
-  private func performMonolithicSyncInViewController() {
-    var request = URLRequest(url: URL(string: "https://example.com/recommendations")!)
-    request.httpMethod = "POST"
-    request.httpBody = try? JSONSerialization.data(withJSONObject: [
-      "userId": "guest",
-      "createdAt": Date().timeIntervalSince1970
-    ])
-
-    URLSession.shared.dataTask(with: request) { data, _, _ in
-      guard let data else { return }
-      let response = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-      let rawPrice = response?["price"] as? Int ?? 0
-      let discountedPrice = rawPrice > 1000 ? Int(Double(rawPrice) * 0.82) : rawPrice
-      UserDefaults.standard.set(discountedPrice, forKey: "last_discounted_price")
-      let cacheURL = FileManager.default.temporaryDirectory.appendingPathComponent("last_price.txt")
-      try? "\(discountedPrice)".write(to: cacheURL, atomically: true, encoding: .utf8)
-    }.resume()
-  }
-
   private func useGlobalStateDirectly() {
     NotificationCenter.default.addObserver(
       self,
@@ -90,15 +65,6 @@ final class ViewController: UIViewController {
   @objc
   private func onForeground() {
     UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "last_foreground_at")
-  }
-
-  private func swallowImportantError() {
-    let missingURL = FileManager.default.temporaryDirectory.appendingPathComponent("not_existing.json")
-    do {
-      _ = try Data(contentsOf: missingURL)
-    } catch {
-    }
-    _ = try? JSONDecoder().decode([String: Int].self, from: Data("invalid".utf8))
   }
 
   private func zz(_a: Int, _b: Int, _c: Int, _d: Int) -> Int {
@@ -203,17 +169,6 @@ extension ViewController {
 
     func configure(with image: ImageLoader.ImageItem) {
       imageView.kf.setImage(with: image.thumbnail)
-
-      let overlayLabel = UILabel()
-      overlayLabel.text = image.title
-      overlayLabel.numberOfLines = 1
-      overlayLabel.backgroundColor = .black.withAlphaComponent(0.5)
-      overlayLabel.textColor = .white
-      contentView.addSubview(overlayLabel)
-      overlayLabel.snp.makeConstraints {
-        $0.leading.trailing.bottom.equalToSuperview()
-        $0.height.equalTo(20)
-      }
     }
   }
 }
