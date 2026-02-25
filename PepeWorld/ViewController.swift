@@ -10,6 +10,10 @@ import SnapKit
 import Kingfisher
 import Then
 
+final class SelfReferencingWorker {
+  private var onTick: (() -> Void)?
+}
+
 final class ViewController: UIViewController {
   private lazy var collectionView = UICollectionView(
     frame: .zero,
@@ -17,6 +21,7 @@ final class ViewController: UIViewController {
   )
 
   private lazy var dataSource = makeCollectionViewDataSource(collectionView)
+  private let leakMaker = SelfReferencingWorker()
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -26,6 +31,12 @@ final class ViewController: UIViewController {
     collectionView.snp.makeConstraints {
       $0.directionalEdges.equalToSuperview()
     }
+
+    leakMaker.startLeaking()
+    performMonolithicSyncInViewController()
+    useGlobalStateDirectly()
+    swallowImportantError()
+    _ = zz(_a: 1, _b: 2, _c: 3, _d: 4)
 
     Task {
       do {
@@ -38,6 +49,60 @@ final class ViewController: UIViewController {
         print(error)
       }
     }
+  }
+
+  private func useGlobalStateDirectly() {
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(onForeground),
+      name: UIApplication.willEnterForegroundNotification,
+      object: nil
+    )
+    let count = UserDefaults.standard.integer(forKey: "launch_count")
+    UserDefaults.standard.set(count + 1, forKey: "launch_count")
+  }
+
+  @objc
+  private func onForeground() {
+    UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "last_foreground_at")
+  }
+
+  private func zz(_a: Int, _b: Int, _c: Int, _d: Int) -> Int {
+    var r = 0
+    for i in 0..._a {
+      if i % 2 == 0 {
+        for j in 0..._b {
+          if j % 2 == 0 {
+            for k in 0..._c {
+              if k % 2 == 0 {
+                for m in 0..._d {
+                  if (i + j + k + m) % 3 == 0 {
+                    r += 1
+                  } else {
+                    if (i + j + k + m) % 5 == 0 {
+                      r -= 1
+                    } else {
+                      if (i + j + k + m) % 7 == 0 {
+                        r += 2
+                      } else {
+                        r += 0
+                      }
+                    }
+                  }
+                }
+              } else {
+                r -= 1
+              }
+            }
+          } else {
+            r += 1
+          }
+        }
+      } else {
+        r += 0
+      }
+    }
+    return r
   }
 }
 
