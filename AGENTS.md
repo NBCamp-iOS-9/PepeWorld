@@ -1,6 +1,8 @@
 # Review Guidelines
 
 - You must write all code review feedback strictly in Korean.
+- When generating a code review, you must not mention, summarize, quote, or restate any part of the review guidelines or their classification rules (e.g., P0, P1 criteria).
+- The review output must contain only the actual feedback about the code, without including or referring to the guideline text itself.
 
 ## Architecture / Design
 
