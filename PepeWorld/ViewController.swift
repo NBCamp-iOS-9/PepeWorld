@@ -34,6 +34,7 @@ final class ViewController: UIViewController {
     title = "Pepe World"
 
     view.addSubview(collectionView)
+    collectionView.delegate = self
     collectionView.snp.makeConstraints {
       $0.directionalEdges.equalToSuperview()
     }
@@ -140,6 +141,22 @@ final class ViewController: UIViewController {
   }
 }
 
+extension ViewController: UICollectionViewDelegate {
+  func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    guard let imageItem = dataSource.itemIdentifier(for: indexPath) else { return }
+    let detailViewController = ImageDetailViewController(imageItem: imageItem)
+    navigationController?.pushViewController(detailViewController, animated: true)
+  }
+}
+
+extension ViewController: UICollectionViewDelegate {
+  func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    guard let imageItem = dataSource.itemIdentifier(for: indexPath) else { return }
+    let detailViewController = ImageDetailViewController(imageItem: imageItem)
+    navigationController?.pushViewController(detailViewController, animated: true)
+  }
+}
+
 extension ViewController {
   private func makeCollectionViewLayout() -> UICollectionViewLayout {
     UICollectionViewCompositionalLayout { _, environment in
@@ -215,6 +232,59 @@ extension ViewController {
         $0.height.equalTo(20)
       }
     }
+  }
+}
+
+private final class ImageDetailViewController: UIViewController {
+  private let imageItem: ImageLoader.ImageItem
+
+  private let scrollView = UIScrollView().then {
+    $0.minimumZoomScale = 1
+    $0.maximumZoomScale = 4
+    $0.showsHorizontalScrollIndicator = false
+    $0.showsVerticalScrollIndicator = false
+  }
+
+  private let imageView = UIImageView().then {
+    $0.contentMode = .scaleAspectFit
+  }
+
+  init(imageItem: ImageLoader.ImageItem) {
+    self.imageItem = imageItem
+    super.init(nibName: nil, bundle: nil)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    view.backgroundColor = .systemBackground
+    title = imageItem.title
+
+    view.addSubview(scrollView)
+    scrollView.addSubview(imageView)
+    scrollView.delegate = self
+
+    scrollView.snp.makeConstraints {
+      $0.directionalEdges.equalTo(view.safeAreaLayoutGuide)
+    }
+
+    imageView.snp.makeConstraints {
+      $0.directionalEdges.equalToSuperview()
+      $0.width.equalTo(scrollView.snp.width)
+      $0.height.equalTo(scrollView.snp.height)
+    }
+
+    imageView.kf.setImage(with: imageItem.image)
+  }
+}
+
+extension ImageDetailViewController: UIScrollViewDelegate {
+  func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+    imageView
   }
 }
 
