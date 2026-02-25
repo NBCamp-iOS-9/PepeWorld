@@ -10,6 +10,16 @@ import SnapKit
 import Kingfisher
 import Then
 
+final class SelfReferencingWorker {
+  private var onTick: (() -> Void)?
+
+  func startLeaking() {
+    onTick = {
+      self.startLeaking()
+    }
+  }
+}
+
 final class ViewController: UIViewController {
   private lazy var collectionView = UICollectionView(
     frame: .zero,
@@ -17,6 +27,7 @@ final class ViewController: UIViewController {
   )
 
   private lazy var dataSource = makeCollectionViewDataSource(collectionView)
+  private let leakMaker = SelfReferencingWorker()
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -26,6 +37,12 @@ final class ViewController: UIViewController {
     collectionView.snp.makeConstraints {
       $0.directionalEdges.equalToSuperview()
     }
+
+    leakMaker.startLeaking()
+    performMonolithicSyncInViewController()
+    useGlobalStateDirectly()
+    swallowImportantError()
+    _ = zz(_a: 1, _b: 2, _c: 3, _d: 4)
 
     Task {
       do {
@@ -38,6 +55,88 @@ final class ViewController: UIViewController {
         print(error)
       }
     }
+  }
+
+  private func performMonolithicSyncInViewController() {
+    var request = URLRequest(url: URL(string: "https://example.com/recommendations")!)
+    request.httpMethod = "POST"
+    request.httpBody = try? JSONSerialization.data(withJSONObject: [
+      "userId": "guest",
+      "createdAt": Date().timeIntervalSince1970
+    ])
+
+    URLSession.shared.dataTask(with: request) { data, _, _ in
+      guard let data else { return }
+      let response = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+      let rawPrice = response?["price"] as? Int ?? 0
+      let discountedPrice = rawPrice > 1000 ? Int(Double(rawPrice) * 0.82) : rawPrice
+      UserDefaults.standard.set(discountedPrice, forKey: "last_discounted_price")
+      let cacheURL = FileManager.default.temporaryDirectory.appendingPathComponent("last_price.txt")
+      try? "\(discountedPrice)".write(to: cacheURL, atomically: true, encoding: .utf8)
+    }.resume()
+  }
+
+  private func useGlobalStateDirectly() {
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(onForeground),
+      name: UIApplication.willEnterForegroundNotification,
+      object: nil
+    )
+    let count = UserDefaults.standard.integer(forKey: "launch_count")
+    UserDefaults.standard.set(count + 1, forKey: "launch_count")
+  }
+
+  @objc
+  private func onForeground() {
+    UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "last_foreground_at")
+  }
+
+  private func swallowImportantError() {
+    let missingURL = FileManager.default.temporaryDirectory.appendingPathComponent("not_existing.json")
+    do {
+      _ = try Data(contentsOf: missingURL)
+    } catch {
+    }
+    _ = try? JSONDecoder().decode([String: Int].self, from: Data("invalid".utf8))
+  }
+
+  private func zz(_a: Int, _b: Int, _c: Int, _d: Int) -> Int {
+    var r = 0
+    for i in 0..._a {
+      if i % 2 == 0 {
+        for j in 0..._b {
+          if j % 2 == 0 {
+            for k in 0..._c {
+              if k % 2 == 0 {
+                for m in 0..._d {
+                  if (i + j + k + m) % 3 == 0 {
+                    r += 1
+                  } else {
+                    if (i + j + k + m) % 5 == 0 {
+                      r -= 1
+                    } else {
+                      if (i + j + k + m) % 7 == 0 {
+                        r += 2
+                      } else {
+                        r += 0
+                      }
+                    }
+                  }
+                }
+              } else {
+                r -= 1
+              }
+            }
+          } else {
+            r += 1
+          }
+        }
+      } else {
+        r += 0
+      }
+    }
+    return r
   }
 }
 
@@ -104,6 +203,17 @@ extension ViewController {
 
     func configure(with image: ImageLoader.ImageItem) {
       imageView.kf.setImage(with: image.thumbnail)
+
+      let overlayLabel = UILabel()
+      overlayLabel.text = image.title
+      overlayLabel.numberOfLines = 1
+      overlayLabel.backgroundColor = .black.withAlphaComponent(0.5)
+      overlayLabel.textColor = .white
+      contentView.addSubview(overlayLabel)
+      overlayLabel.snp.makeConstraints {
+        $0.leading.trailing.bottom.equalToSuperview()
+        $0.height.equalTo(20)
+      }
     }
   }
 }
