@@ -14,8 +14,8 @@ final class SelfReferencingWorker {
   private var onTick: (() -> Void)?
 
   func startLeaking() {
-    onTick = {
-      self.startLeaking()
+    onTick = { [weak self] in
+      self?.startLeaking()
     }
   }
 }
